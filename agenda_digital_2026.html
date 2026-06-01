@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Agenda 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f9f8f6;--surface:#fff;--surface2:#f2f1ef;--border:#e4e2de;--border2:#d0cec9;--text:#1a1917;--text2:#6b6860;--text3:#a8a49e;--accent:#1a1917;--green:#2d7a5f;--radius:10px;--radius-sm:6px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;font-size:14px}
+.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:56px 1fr;height:100vh}
+.topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border);gap:16px}
+.brand{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;letter-spacing:.04em;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.sync-badge{font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid var(--border);color:var(--text3);font-family:'DM Mono',monospace;transition:all .3s}
+.sync-badge.synced{color:var(--green);border-color:var(--green)}
+.sync-badge.syncing{color:#ba7517;border-color:#ba7517}
+.sync-badge.error{color:#c0392b;border-color:#c0392b}
+.month-nav{display:flex;align-items:center;gap:10px}
+.nav-btn{width:28px;height:28px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:none;cursor:pointer;font-size:16px;color:var(--text2);transition:background .15s;display:flex;align-items:center;justify-content:center}
+.nav-btn:hover{background:var(--surface2)}
+.month-label{font-size:14px;font-weight:500;min-width:150px;text-align:center}
+.tabs{display:flex;gap:2px;background:var(--surface2);border-radius:var(--radius-sm);padding:3px}
+.tab{padding:5px 14px;border-radius:5px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);transition:all .15s;font-family:'DM Sans',sans-serif}
+.tab.active{background:var(--surface);color:var(--text)}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:16px 0;display:flex;flex-direction:column;gap:20px}
+.sidebar-block{padding:0 14px}
+.sidebar-heading{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.week-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;color:var(--text2);transition:background .12s}
+.week-item:hover{background:var(--surface2)}
+.week-item.active{background:var(--accent);color:#fff}
+.week-item.active .wdot{background:rgba(255,255,255,.4)}
+.wdot{width:6px;height:6px;border-radius:50%;background:var(--border2)}
+.wdot.filled{background:var(--green)}
+.progress-wrap{padding:0 14px}
+.progress-track{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;margin:6px 0 4px}
+.progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width .4s}
+.progress-pct{font-size:11px;color:var(--text2);text-align:right}
+.main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.view{flex:1;overflow-y:auto;padding:20px}
+.weekly-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;min-height:380px}
+.day-col{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden}
+.day-col.weekend{background:var(--surface2)}
+.day-col.today{border-color:var(--accent);border-width:1.5px}
+.day-header{padding:10px 10px 8px;border-bottom:1px solid var(--border)}
+.day-num{font-size:20px;font-weight:500;line-height:1}
+.today .day-num{color:var(--green)}
+.day-name{font-size:10px;color:var(--text3);margin-top:2px;font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+.day-body{flex:1;padding:8px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+.task-item{display:flex;align-items:flex-start;gap:6px}
+.task-cb{width:14px;height:14px;border:1.5px solid var(--border2);border-radius:4px;flex-shrink:0;margin-top:1px;cursor:pointer;background:var(--surface);transition:all .12s;display:flex;align-items:center;justify-content:center}
+.task-cb.done{background:var(--green);border-color:var(--green)}
+.task-cb.done::after{content:'✓';font-size:9px;color:#fff;font-weight:700}
+.task-text{font-size:11px;line-height:1.5;flex:1;word-break:break-word}
+.task-text.done{text-decoration:line-through;color:var(--text3)}
+.task-del{opacity:0;font-size:11px;color:var(--text3);cursor:pointer;padding:0 2px;border:none;background:none;transition:opacity .1s}
+.task-item:hover .task-del{opacity:1}
+.add-row{display:flex;align-items:center;gap:5px;opacity:.5;transition:opacity .15s}
+.add-row:hover,.add-row:focus-within{opacity:1}
+.add-plus{font-size:13px;color:var(--text3)}
+.add-input{border:none;background:none;font-size:11px;color:var(--text2);outline:none;width:100%;font-family:'DM Sans',sans-serif}
+.add-input::placeholder{color:var(--text3)}
+.habits-view{max-width:900px}
+.view-title{font-size:18px;font-weight:500;margin-bottom:6px}
+.view-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
+.habit-header-row{display:flex;margin-bottom:2px}
+.habit-col-label{flex:1;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);text-align:center;padding:6px 2px}
+.habit-col-label:first-child{flex:0 0 56px;text-align:left;padding-left:4px}
+.habit-name-input{width:100%;border:none;background:none;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);text-align:center;outline:none;font-family:'DM Sans',sans-serif;cursor:pointer}
+.habit-name-input::placeholder{color:var(--border2)}
+.habit-row{display:flex;align-items:center;border-bottom:1px solid var(--border);min-height:30px}
+.habit-row:first-child{border-top:1px solid var(--border)}
+.habit-row.weekend{background:var(--surface2)}
+.habit-day-num{flex:0 0 56px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);padding:4px;display:flex;align-items:center;gap:6px}
+.habit-day-name{font-size:9px;color:var(--text3)}
+.habit-cell{flex:1;display:flex;align-items:center;justify-content:center;padding:4px 2px}
+.hab-check{width:16px;height:16px;border:1.5px solid var(--border2);border-radius:4px;cursor:pointer;background:var(--surface);transition:all .12s;display:flex;align-items:center;justify-content:center}
+.hab-check.done{background:var(--green);border-color:var(--green)}
+.hab-check.done::after{content:'✓';font-size:10px;color:#fff;font-weight:700}
+.stats-row{display:flex;gap:10px;margin-top:20px}
+.stat-card{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.stat-label{font-size:11px;color:var(--text3);margin-bottom:4px}
+.stat-val{font-size:24px;font-weight:500;font-family:'DM Mono',monospace}
+.challenge-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px}
+.challenge-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:14px}
+.challenge-fields{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.challenge-field{display:flex;align-items:center;gap:8px}
+.challenge-label{font-size:11px;color:var(--text2);white-space:nowrap;min-width:140px}
+.challenge-input{flex:1;border:none;border-bottom:1px solid var(--border);background:none;font-size:12px;color:var(--text);outline:none;padding:3px 0;font-family:'DM Sans',sans-serif}
+.circles-row{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
+.day-circle{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;font-family:'DM Mono',monospace;color:var(--text2);cursor:pointer;transition:all .12s;background:var(--surface)}
+.day-circle.done{background:var(--green);border-color:var(--green);color:#fff;font-weight:700}
+.objective-view{max-width:700px}
+.obj-main-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px}
+.obj-main-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px}
+.obj-main-input{width:100%;border:none;background:none;font-size:18px;font-weight:500;color:var(--text);outline:none;font-family:'DM Sans',sans-serif}
+.obj-main-input::placeholder{color:var(--border2)}
+.metas-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:12px}
+.metas-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.meta-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.meta-num{font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);margin-bottom:6px}
+.meta-input{width:100%;border:none;background:none;font-size:13px;color:var(--text);outline:none;font-family:'DM Sans',sans-serif}
+.meta-input::placeholder{color:var(--border2)}
+.meta-date{font-size:10px;color:var(--text3);margin-top:8px;display:flex;align-items:center;gap:6px}
+.meta-date input[type=date]{border:none;background:none;font-size:10px;color:var(--text2);outline:none;font-family:'DM Mono',monospace}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-header-cell{text-align:center;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);padding:6px 0}
+.cal-cell{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);min-height:70px;padding:6px;cursor:pointer;transition:border-color .12s}
+.cal-cell:hover{border-color:var(--border2)}
+.cal-cell.other-month{background:var(--bg);opacity:.5}
+.cal-cell.weekend{background:var(--surface2)}
+.cal-cell.today{border-color:var(--green);border-width:1.5px}
+.cal-day-num{font-size:12px;font-weight:500;margin-bottom:4px;font-family:'DM Mono',monospace}
+.cal-tasks{display:flex;flex-direction:column;gap:2px}
+.cal-task-dot{font-size:10px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:3px}
+.cal-task-dot::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--green);flex-shrink:0}
+.cal-task-dot.done-dot{color:var(--text3)}
+.cal-task-dot.done-dot::before{background:var(--border2)}
+.chat-panel{border-top:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;max-height:260px}
+.chat-chips{display:flex;gap:6px;padding:8px 14px 0;flex-wrap:wrap}
+.chip{padding:4px 12px;border-radius:20px;border:1px solid var(--border);font-size:11px;cursor:pointer;background:var(--bg);color:var(--text2);transition:all .12s;font-family:'DM Sans',sans-serif}
+.chip:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chat-msgs{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:6px;min-height:80px}
+.msg{max-width:75%;padding:8px 12px;border-radius:var(--radius);font-size:12px;line-height:1.6}
+.msg.user{background:var(--accent);color:#fff;align-self:flex-end}
+.msg.ai{background:var(--surface2);color:var(--text);align-self:flex-start;border:1px solid var(--border)}
+.msg.loading{color:var(--text3);font-style:italic}
+.chat-input-row{display:flex;gap:8px;padding:8px 14px;border-top:1px solid var(--border)}
+.chat-input{flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);outline:none;transition:border-color .12s}
+.chat-input:focus{border-color:var(--accent)}
+.send-btn{padding:7px 16px;border-radius:var(--radius-sm);background:var(--accent);color:#fff;border:none;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:opacity .12s}
+.send-btn:hover{opacity:.8}
+.loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;flex-direction:column;gap:12px}
+.loading-spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:var(--text2);font-family:'DM Mono',monospace}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Conectando con Firebase...</div>
+</div>
+
+<div class="layout">
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="brand"><div class="brand-dot"></div>MI AGENDA 2026</div>
+    <span class="sync-badge" id="sync-badge">● conectando</span>
+  </div>
+  <div class="month-nav">
+    <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+    <span class="month-label" id="month-label"></span>
+    <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchView('weekly',this)">Semana</button>
+    <button class="tab" onclick="switchView('calendar',this)">Mes</button>
+    <button class="tab" onclick="switchView('habits',this)">Hábitos</button>
+    <button class="tab" onclick="switchView('objective',this)">Objetivo</button>
+  </div>
+</div>
+<div class="sidebar">
+  <div class="sidebar-block">
+    <div class="sidebar-heading">Semanas</div>
+    <div id="week-list"></div>
+  </div>
+  <div class="progress-wrap">
+    <div class="sidebar-heading">Progreso del mes</div>
+    <div style="font-size:11px;color:var(--text3)" id="prog-label">0 de 0 tareas</div>
+    <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="progress-pct" id="prog-pct">0%</div>
+  </div>
+</div>
+<div class="main">
+  <div class="view" id="main-view"></div>
+  <div class="chat-panel">
+    <div class="chat-chips">
+      <span class="chip" onclick="quickSend('¿Cómo va mi semana?')">¿Cómo va mi semana?</span>
+      <span class="chip" onclick="quickSend('Dame 3 sugerencias de tareas')">Sugerí tareas</span>
+      <span class="chip" onclick="quickSend('¿Cuántos hábitos completé este mes?')">Resumen hábitos</span>
+      <span class="chip" onclick="quickSend('Ayudame a definir mi objetivo del mes')">Definir objetivo</span>
+      <span class="chip" onclick="quickSend('¿Qué días tengo tareas pendientes?')">Ver pendientes</span>
+    </div>
+    <div class="chat-msgs" id="chat-msgs">
+      <div class="msg ai">¡Hola! Soy tu asistente de agenda con sincronización en la nube. Tus datos se guardan automáticamente en todos tus dispositivos. ¿En qué te ayudo?</div>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chat-input" placeholder="Preguntale algo a tu agenda..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="send-btn" onclick="sendChat()">Enviar</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, get, onValue, update } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCWWWwJHxYTUizJDoDxKkh6iILbemimmAc",
+  authDomain: "mi-agenda-2026-a523f.firebaseapp.com",
+  databaseURL: "https://mi-agenda-2026-a523f-default-rtdb.firebaseio.com",
+  projectId: "mi-agenda-2026-a523f",
+  storageBucket: "mi-agenda-2026-a523f.firebasestorage.app",
+  messagingSenderId: "390236863910",
+  appId: "1:390236863910:web:9899b15837cb3e7a5c6367"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS_SHORT=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const DAYS_FULL=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DEFAULT_HABITS=['Ejercicio','Lectura','Meditación','Pádel','Agua','Descanso'];
+
+let curMonth=5, curYear=2026, curView='weekly', selWeekMonday=null;
+let cache = {};
+let saveTimer = null;
+
+function setSyncBadge(state){
+  const b = document.getElementById('sync-badge');
+  if(state==='synced'){ b.textContent='● sincronizado'; b.className='sync-badge synced'; }
+  else if(state==='syncing'){ b.textContent='● guardando...'; b.className='sync-badge syncing'; }
+  else if(state==='error'){ b.textContent='● sin conexión'; b.className='sync-badge error'; }
+  else { b.textContent='● conectando'; b.className='sync-badge'; }
+}
+
+function fbKey(k){ return k.replace(/[.#$\[\]]/g,'_'); }
+
+async function fbGet(key){
+  if(cache[key]!==undefined) return cache[key];
+  try{
+    const snap = await get(ref(db, 'agenda/'+fbKey(key)));
+    const val = snap.exists() ? snap.val() : null;
+    cache[key] = val;
+    return val;
+  }catch(e){ return null; }
+}
+
+function fbSet(key, val){
+  cache[key] = val;
+  setSyncBadge('syncing');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    try{
+      await set(ref(db,'agenda/'+fbKey(key)), val);
+      setSyncBadge('synced');
+    }catch(e){ setSyncBadge('error'); }
+  }, 600);
+}
+
+function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
+function dateKey(dt){ return`t_${dt.getFullYear()}_${String(dt.getMonth()+1).padStart(2,'0')}_${String(dt.getDate()).padStart(2,'0')}`; }
+function habitKey(y,m){ return`hab_${y}_${m}`; }
+function objKey(y,m){ return`obj_${y}_${m}`; }
+function chalKey(y,m){ return`chal_${y}_${m}`; }
+function isToday(dt){ const t=new Date(); return dt.getFullYear()===t.getFullYear()&&dt.getMonth()===t.getMonth()&&dt.getDate()===t.getDate(); }
+function isWeekend(dt){ return dt.getDay()===0||dt.getDay()===6; }
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function getMondaysOfMonth(y,m){
+  const mondays=[],first=new Date(y,m,1),last=new Date(y,m+1,0);
+  let d=new Date(first); d.setDate(d.getDate()-((d.getDay()+6)%7));
+  while(d<=last){ mondays.push(new Date(d)); d=new Date(d); d.setDate(d.getDate()+7); }
+  return mondays;
+}
+function getWeekDays(monday){ return Array.from({length:7},(_,i)=>{ const d=new Date(monday); d.setDate(d.getDate()+i); return d; }); }
+
+async function getTasks(dt){ return (await fbGet(dateKey(dt)))||[]; }
+function saveTasks(dt,tasks){ fbSet(dateKey(dt), tasks); }
+async function getHabitNames(){ return (await fbGet('habit_names'))||DEFAULT_HABITS; }
+
+async function updateSidebar(){
+  const mondays=getMondaysOfMonth(curYear,curMonth);
+  let html='';
+  for(const mon of mondays){
+    const days=getWeekDays(mon);
+    let hasTasks=false;
+    for(const d of days){ const t=await getTasks(d); if(t.length>0){hasTasks=true;break;} }
+    const isActive=selWeekMonday&&mon.getTime()===selWeekMonday.getTime();
+    const d1=mon.getDate(), d2=new Date(mon.getTime()+6*86400000).getDate();
+    html+=`<div class="week-item${isActive?' active':''}" onclick="window._selectWeek(${mon.getTime()})"><span>${String(d1).padStart(2,'0')} — ${String(d2).padStart(2,'0')}</span><div class="wdot${hasTasks?' filled':''}"></div></div>`;
+  }
+  document.getElementById('week-list').innerHTML=html;
+  await updateProgress();
+}
+
+async function updateProgress(){
+  const days=daysInMonth(curYear,curMonth);
+  let total=0,done=0;
+  for(let d=1;d<=days;d++){ const tasks=await getTasks(new Date(curYear,curMonth,d)); total+=tasks.length; done+=tasks.filter(t=>t.done).length; }
+  const pct=total>0?Math.round(done/total*100):0;
+  document.getElementById('prog-label').textContent=`${done} de ${total} tareas`;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-pct').textContent=pct+'%';
+}
+
+window._selectWeek = async function(ts){
+  selWeekMonday=new Date(ts);
+  if(curView==='weekly') await renderWeekly();
+  else if(curView==='calendar') await renderCalendar();
+  await updateSidebar();
+};
+
+function changeMonth(delta){
+  curMonth+=delta;
+  if(curMonth>11){curMonth=0;curYear++;} if(curMonth<0){curMonth=11;curYear--;}
+  if(curYear<2026||(curYear===2026&&curMonth<5)){curMonth=5;curYear=2026;}
+  if(curYear>2026||(curYear===2026&&curMonth>11)){curMonth=11;curYear=2026;}
+  document.getElementById('month-label').textContent=MONTHS[curMonth]+' '+curYear;
+  selWeekMonday=getMondaysOfMonth(curYear,curMonth)[0];
+  render();
+}
+window.changeMonth = changeMonth;
+
+function switchView(view,btn){
+  curView=view;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+window.switchView = switchView;
+
+async function render(){
+  document.getElementById('month-label').textContent=MONTHS[curMonth]+' '+curYear;
+  if(!selWeekMonday) selWeekMonday=getMondaysOfMonth(curYear,curMonth)[0];
+  await updateSidebar();
+  if(curView==='weekly') await renderWeekly();
+  else if(curView==='calendar') await renderCalendar();
+  else if(curView==='habits') await renderHabits();
+  else await renderObjective();
+}
+
+async function renderWeekly(){
+  const days=getWeekDays(selWeekMonday);
+  let html='<div class="weekly-grid">';
+  for(const day of days){
+    const tasks=await getTasks(day); const dk=dateKey(day);
+    html+=`<div class="day-col${isWeekend(day)?' weekend':''}${isToday(day)?' today':''}"><div class="day-header"><div class="day-num">${day.getDate()}</div><div class="day-name">${DAYS_FULL[day.getDay()]}</div></div><div class="day-body" id="body-${dk}">`;
+    tasks.forEach((t,i)=>{ html+=`<div class="task-item"><div class="task-cb${t.done?' done':''}" onclick="window._toggleTask('${dk}',${i})"></div><span class="task-text${t.done?' done':''}">${escHtml(t.text)}</span><button class="task-del" onclick="window._delTask('${dk}',${i})">×</button></div>`; });
+    html+=`<div class="add-row"><span class="add-plus">+</span><input class="add-input" placeholder="Nueva tarea..." onkeydown="if(event.key==='Enter')window._addTask('${dk}',this)"></div></div></div>`;
+  }
+  html+='</div>';
+  document.getElementById('main-view').innerHTML=html;
+}
+
+function parseDk(dk){ const p=dk.replace('t_','').split('_'); return new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2])); }
+
+window._addTask = async function(dk,input){
+  if(!input.value.trim()) return;
+  const dt=parseDk(dk); const tasks=await getTasks(dt);
+  tasks.push({text:input.value.trim(),done:false}); saveTasks(dt,tasks);
+  input.value=''; await renderWeekly(); await updateProgress();
+};
+window._toggleTask = async function(dk,i){
+  const dt=parseDk(dk); const tasks=await getTasks(dt);
+  tasks[i].done=!tasks[i].done; saveTasks(dt,tasks);
+  await renderWeekly(); await updateProgress();
+};
+window._delTask = async function(dk,i){
+  const dt=parseDk(dk); const tasks=await getTasks(dt);
+  tasks.splice(i,1); saveTasks(dt,tasks);
+  await renderWeekly(); await updateProgress();
+};
+
+async function renderCalendar(){
+  const first=new Date(curYear,curMonth,1); let start=new Date(first); start.setDate(start.getDate()-((start.getDay()+6)%7));
+  let html=`<div><div style="font-size:18px;font-weight:500;margin-bottom:16px">${MONTHS[curMonth]} ${curYear}</div><div class="cal-grid">`;
+  ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(d=>{html+=`<div class="cal-header-cell">${d}</div>`;});
+  for(let w=0;w<6;w++){ for(let d=0;d<7;d++){
+    const dt=new Date(start); dt.setDate(start.getDate()+w*7+d);
+    const inMonth=dt.getMonth()===curMonth; const tasks=await getTasks(dt);
+    html+=`<div class="cal-cell${!inMonth?' other-month':''}${isWeekend(dt)?' weekend':''}${isToday(dt)?' today':''}" onclick="window._goToDay(${dt.getTime()})"><div class="cal-day-num">${String(dt.getDate()).padStart(2,'0')}</div><div class="cal-tasks">`;
+    tasks.slice(0,3).forEach(t=>{html+=`<div class="cal-task-dot${t.done?' done-dot':''}">${escHtml(t.text)}</div>`;});
+    if(tasks.length>3) html+=`<div style="font-size:9px;color:var(--text3)">+${tasks.length-3} más</div>`;
+    html+=`</div></div>`;
+  }}
+  html+='</div></div>'; document.getElementById('main-view').innerHTML=html;
+}
+window._goToDay = function(ts){ const dt=new Date(ts); const monday=new Date(dt); monday.setDate(dt.getDate()-((dt.getDay()+6)%7)); selWeekMonday=monday; switchView('weekly',document.querySelectorAll('.tab')[0]); };
+
+async function renderHabits(){
+  const habNames=await getHabitNames(); const habData=(await fbGet(habitKey(curYear,curMonth)))||{}; const days=daysInMonth(curYear,curMonth);
+  let html=`<div class="habits-view"><div class="view-title">Hábitos diarios</div><div class="view-sub">${MONTHS[curMonth]} ${curYear} — clic en el nombre para renombrarlo</div><div class="habit-header-row"><div class="habit-col-label">Día</div>`;
+  habNames.forEach((hn,hi)=>{ html+=`<div class="habit-col-label"><input class="habit-name-input" value="${escHtml(hn)}" placeholder="Hábito ${hi+1}" onchange="window._renameHabit(${hi},this.value)"></div>`; });
+  html+='</div>';
+  for(let d=1;d<=days;d++){
+    const dt=new Date(curYear,curMonth,d);
+    html+=`<div class="habit-row${isWeekend(dt)?' weekend':''}"><div class="habit-day-num">${String(d).padStart(2,'0')} <span class="habit-day-name">${DAYS_SHORT[dt.getDay()]}</span></div>`;
+    habNames.forEach((_,hi)=>{ const done=habData[`${d}_${hi}`]||false; html+=`<div class="habit-cell"><div class="hab-check${done?' done':''}" onclick="window._toggleHabit(${d},${hi})"></div></div>`; });
+    html+='</div>';
+  }
+  const total=days*habNames.length; const done=Object.values(habData).filter(Boolean).length; const pct=total>0?Math.round(done/total*100):0;
+  let streak=0; for(let d=days;d>=1;d--){ if(Array.from({length:habNames.length},(_,h)=>habData[`${d}_${h}`]||false).every(Boolean)) streak++; else break; }
+  html+=`<div class="stats-row"><div class="stat-card"><div class="stat-label">Completados</div><div class="stat-val">${done}</div></div><div class="stat-card"><div class="stat-label">Porcentaje</div><div class="stat-val">${pct}%</div></div><div class="stat-card"><div class="stat-label">Racha (días)</div><div class="stat-val">${streak}</div></div></div>`;
+  const chal=(await fbGet(chalKey(curYear,curMonth)))||{bad:'',good:'',circles:{}};
+  html+=`<div class="challenge-card"><div class="challenge-title">Desafío 21 días</div><div class="challenge-fields"><div class="challenge-field"><span class="challenge-label">Mal hábito a sustituir</span><input class="challenge-input" id="chal-bad" value="${escHtml(chal.bad||'')}" placeholder="..." onchange="window._saveChallenge()"></div><div class="challenge-field"><span class="challenge-label">Nuevo hábito a crear</span><input class="challenge-input" id="chal-good" value="${escHtml(chal.good||'')}" placeholder="..." onchange="window._saveChallenge()"></div></div><div class="circles-row">`;
+  for(let i=1;i<=21;i++){ const d21=chal.circles&&chal.circles[i]; html+=`<div class="day-circle${d21?' done':''}" onclick="window._toggleCircle(${i})">${i}</div>`; }
+  html+='</div></div></div>'; document.getElementById('main-view').innerHTML=html;
+}
+window._renameHabit = async function(hi,val){ const names=await getHabitNames(); names[hi]=val; fbSet('habit_names',names); };
+window._toggleHabit = async function(day,hi){ const habData=(await fbGet(habitKey(curYear,curMonth)))||{}; habData[`${day}_${hi}`]=!habData[`${day}_${hi}`]; fbSet(habitKey(curYear,curMonth),habData); await renderHabits(); };
+window._saveChallenge = async function(){ const chal=(await fbGet(chalKey(curYear,curMonth)))||{circles:{}}; chal.bad=document.getElementById('chal-bad')?.value||''; chal.good=document.getElementById('chal-good')?.value||''; fbSet(chalKey(curYear,curMonth),chal); };
+window._toggleCircle = async function(i){ const chal=(await fbGet(chalKey(curYear,curMonth)))||{circles:{}}; if(!chal.circles)chal.circles={}; chal.circles[i]=!chal.circles[i]; fbSet(chalKey(curYear,curMonth),chal); await renderHabits(); };
+
+async function renderObjective(){
+  const obj=(await fbGet(objKey(curYear,curMonth)))||{main:'',metas:Array(8).fill(''),dates:Array(8).fill('')};
+  let html=`<div class="objective-view"><div class="view-title">Objetivo de ${MONTHS[curMonth]}</div><div class="view-sub">${curYear}</div><div class="obj-main-card"><div class="obj-main-label">Objetivo principal</div><input class="obj-main-input" id="obj-main" value="${escHtml(obj.main||'')}" placeholder="¿Cuál es tu gran objetivo este mes?" onchange="window._saveObj()"></div><div class="metas-title">Divide en metas concretas</div><div class="metas-grid">`;
+  for(let i=0;i<8;i++){ html+=`<div class="meta-card"><div class="meta-num">META ${String(i+1).padStart(2,'0')}</div><input class="meta-input" id="meta-${i}" value="${escHtml((obj.metas&&obj.metas[i])||'')}" placeholder="Acción concreta..." onchange="window._saveObj()"><div class="meta-date"><span>Fecha límite:</span><input type="date" id="mdate-${i}" value="${(obj.dates&&obj.dates[i])||''}" onchange="window._saveObj()"></div></div>`; }
+  html+='</div></div>'; document.getElementById('main-view').innerHTML=html;
+}
+window._saveObj = async function(){ const main=document.getElementById('obj-main')?.value||''; const metas=Array.from({length:8},(_,i)=>document.getElementById(`meta-${i}`)?.value||''); const dates=Array.from({length:8},(_,i)=>document.getElementById(`mdate-${i}`)?.value||''); fbSet(objKey(curYear,curMonth),{main,metas,dates}); };
+
+async function getAgendaContext(){
+  const days=daysInMonth(curYear,curMonth); let allTasks=[];
+  for(let d=1;d<=days;d++){ const dt=new Date(curYear,curMonth,d); const tasks=await getTasks(dt); if(tasks.length>0) allTasks.push({fecha:`${d} de ${MONTHS[curMonth]}`,tareas:tasks}); }
+  const habData=(await fbGet(habitKey(curYear,curMonth)))||{}; const habNames=await getHabitNames(); const habDone=Object.values(habData).filter(Boolean).length; const obj=(await fbGet(objKey(curYear,curMonth)))||{};
+  return{mes:MONTHS[curMonth]+' '+curYear,allTasks,habDone,habNames,obj};
+}
+
+async function sendChat(){
+  const input=document.getElementById('chat-input'); const msg=input.value.trim(); if(!msg)return;
+  input.value=''; appendMsg(msg,'user'); const id='load-'+Date.now(); appendMsg('Pensando...','ai loading',id);
+  const ctx=await getAgendaContext();
+  const system=`Eres el asistente personal de una agenda de productividad en español.\n\nEstado actual:\n- Mes: ${ctx.mes}\n- Objetivo: ${ctx.obj.main||'sin definir'}\n- Metas: ${(ctx.obj.metas||[]).filter(m=>m).join(' | ')||'ninguna'}\n- Hábitos (${ctx.habNames.join(', ')}): ${ctx.habDone} completados este mes\n- Tareas: ${JSON.stringify(ctx.allTasks.slice(0,10))}\n\nResponde en español, breve y motivador (máximo 4 oraciones).`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system,messages:[{role:'user',content:msg}]})});
+    const data=await res.json(); document.getElementById(id)?.remove(); appendMsg(data.content?.[0]?.text||'No pude responder.','ai');
+  }catch(e){ document.getElementById(id)?.remove(); appendMsg('Error al conectar con el asistente.','ai'); }
+}
+window.sendChat = sendChat;
+
+function appendMsg(text,cls,id){ const div=document.createElement('div'); div.className='msg '+cls; if(id)div.id=id; div.textContent=text; const c=document.getElementById('chat-msgs'); c.appendChild(div); c.scrollTop=c.scrollHeight; }
+function quickSend(text){ document.getElementById('chat-input').value=text; sendChat(); }
+window.quickSend = quickSend;
+
+async function init(){
+  try{
+    await get(ref(db,'agenda/ping'));
+    setSyncBadge('synced');
+  }catch(e){ setSyncBadge('error'); }
+  document.getElementById('loading-overlay').style.display='none';
+  await render();
+}
+
+init();
+</script>
+</body>
+</html>
